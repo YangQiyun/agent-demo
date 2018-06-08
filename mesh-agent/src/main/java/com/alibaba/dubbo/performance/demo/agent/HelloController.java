@@ -60,7 +60,7 @@ public class HelloController {
 
     public DeferredResult<Integer> consumer(String interfaceName,String method,String parameterTypesString,String parameter) throws Exception {
 
-        if (null == endpoints&&endpoints.size()!=6){
+        if (null == endpoints){
             synchronized (lock){
                 if (null == endpoints){
                     endpoints = new ArrayList<>();
