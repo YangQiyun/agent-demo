@@ -14,7 +14,7 @@ import io.netty.util.concurrent.Future;
 import java.net.InetSocketAddress;
 
 public class ConnecManager {
-    private EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    private EventLoopGroup eventLoopGroup = new NioEventLoopGroup(4);
 
     private Bootstrap bootstrap;
 
@@ -25,8 +25,6 @@ public class ConnecManager {
 
     private int maxConnections = 100;
 
-    public ConnecManager() {
-    }
 
     public Channel getChannel() throws Exception {
         if (null != channel) {
@@ -86,7 +84,7 @@ public class ConnecManager {
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT)
-                .channel(NioSocketChannel.class)
-                .handler(new RpcClientInitializer());
+                .channel(NioSocketChannel.class);
+                //.handler(new RpcClientInitializer());
     }
 }
