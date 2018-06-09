@@ -38,10 +38,9 @@ public class HelloController {
     private List<Endpoint> endpoints = null;
     private Object lock = new Object();
     private AsyncHttpClient asyncHttpClient = asyncHttpClient(config()
-            .setMaxConnections(600)
-            .setMaxConnectionsPerHost(200)
-            .setPooledConnectionIdleTimeout(100)
-            .setConnectionTtl(600));
+            .setMaxConnections(150)
+            .setMaxConnectionsPerHost(50)
+    );
 
 
     @RequestMapping(value = "")
