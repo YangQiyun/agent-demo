@@ -33,7 +33,7 @@ public class HelloController {
 
     private Logger logger = LoggerFactory.getLogger(HelloController.class);
     
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));
+    private EtcdRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));
 
     private RpcClient rpcClient = new RpcClient(registry);
     private Random random = new Random();
@@ -80,17 +80,7 @@ public class HelloController {
         if (null == endpoints){
             synchronized (lock){
                 if (null == endpoints){
-                    endpoints = new ArrayList<>();
-                    Endpoint endpoint1 = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService" + "small").get(0);
-                    endpoints.add(endpoint1);
-                    Endpoint endpoint2=registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"middle").get(0);
-                    endpoints.add(endpoint2);
-                    endpoints.add(endpoint2);
-                    Endpoint endpoint3=registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"large").get(0);
-                    endpoints.add(endpoint3);
-                    endpoints.add(endpoint3);
-                    endpoints.add(endpoint3);
-                    logger.info("endpoints is "+endpoints.size());
+                    endpoints =registry.findAll();
                 }
             }
         }
