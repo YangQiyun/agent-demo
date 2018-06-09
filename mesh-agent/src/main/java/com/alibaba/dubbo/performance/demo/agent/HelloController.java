@@ -4,6 +4,7 @@ import com.alibaba.dubbo.performance.demo.agent.dubbo.RpcClient;
 import com.alibaba.dubbo.performance.demo.agent.registry.Endpoint;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
+import io.netty.util.HashedWheelTimer;
 import okhttp3.*;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.asynchttpclient.AsyncHttpClient;
@@ -11,6 +12,7 @@ import static org.asynchttpclient.Dsl.*;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.netty.channel.DefaultChannelPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -29,18 +31,25 @@ public class HelloController {
 
     private Logger logger = LoggerFactory.getLogger(HelloController.class);
     
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));
+    private EtcdRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));
 
     private RpcClient rpcClient = new RpcClient(registry);
     private Random random = new Random();
     private List<Endpoint> endpoints = null;
     private Object lock = new Object();
-    private AsyncHttpClient asyncHttpClient = asyncHttpClient(config()
-            // configure
-            .setMaxConnections(2000)
-            .setMaxConnectionsPerHost(500)
-    );
+    private AsyncHttpClient asyncHttpClient = null;
 
+    public HelloController(){
+        // simple configure
+        HashedWheelTimer timer = new HashedWheelTimer();
+        timer.start();
+        asyncHttpClient = asyncHttpClient(config()
+                .setMaxConnections(2000)
+                .setMaxConnectionsPerHost(200)
+                .setNettyTimer(timer)
+                .setChannelPool(new DefaultChannelPool(60000,-1,DefaultChannelPool.PoolLeaseStrategy.LIFO,timer,1000))
+        );
+    }
 
     @RequestMapping(value = "")
     public Object invoke(@RequestParam("interface") String interfaceName,
@@ -69,17 +78,7 @@ public class HelloController {
         if (null == endpoints){
             synchronized (lock){
                 if (null == endpoints){
-                    endpoints = new ArrayList<>();
-                    Endpoint endpoint1 = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService" + "small").get(0);
-                    endpoints.add(endpoint1);
-                    Endpoint endpoint2=registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"middle").get(0);
-                    endpoints.add(endpoint2);
-                    endpoints.add(endpoint2);
-                    Endpoint endpoint3=registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"large").get(0);
-                    endpoints.add(endpoint3);
-                    endpoints.add(endpoint3);
-                    endpoints.add(endpoint3);
-                    logger.info("endpoints is "+endpoints.size());
+                    endpoints =registry.findAll();
                 }
             }
         }

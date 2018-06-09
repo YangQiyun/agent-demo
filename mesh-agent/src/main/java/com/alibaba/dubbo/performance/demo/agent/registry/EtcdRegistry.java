@@ -95,4 +95,20 @@ public class EtcdRegistry implements IRegistry{
         }
         return endpoints;
     }
+
+    public List<Endpoint> findAll() throws Exception {
+
+        List<Endpoint>  endpoints = new ArrayList<>();
+        Endpoint endpoint1 = this.find("com.alibaba.dubbo.performance.demo.provider.IHelloService" + "small").get(0);
+        endpoints.add(endpoint1);
+        Endpoint endpoint2=this.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"middle").get(0);
+        endpoints.add(endpoint2);
+        endpoints.add(endpoint2);
+        Endpoint endpoint3=this.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"large").get(0);
+        endpoints.add(endpoint3);
+        endpoints.add(endpoint3);
+        endpoints.add(endpoint3);
+        logger.info("endpoints is "+endpoints.size());
+        return endpoints;
+    }
 }
