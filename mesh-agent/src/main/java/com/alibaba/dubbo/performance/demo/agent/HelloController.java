@@ -71,11 +71,9 @@ public class HelloController {
         if (null == endpoints){
             synchronized (lock){
                 if (null == endpoints){
-                    synchronized (endpoints) {
-                        endpoints = new ArrayList<>();
-                        Endpoint endpoint1 = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService" + "small").get(0);
-                        endpoints.add(endpoint1);
-                    }
+                    endpoints = new ArrayList<>();
+                    Endpoint endpoint1 = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService" + "small").get(0);
+                    endpoints.add(endpoint1);
                     Endpoint endpoint2=registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"middle").get(0);
                     endpoints.add(endpoint2);
                     endpoints.add(endpoint2);
