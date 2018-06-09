@@ -8,6 +8,8 @@ import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcRequestHolder;
 
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
 import io.netty.channel.Channel;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -28,7 +30,8 @@ public class RpcClient {
 
     public Object invoke(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
 
-        Channel channel = connectManager.getChannel();
+        Future<Channel> channelFuture = connectManager.getFuture();
+
 
         RpcInvocation invocation = new RpcInvocation();
         invocation.setMethodName(method);
@@ -51,7 +54,14 @@ public class RpcClient {
         future.setResult(DefferResult);
         RpcRequestHolder.put(String.valueOf(request.getId()),future);
 
-        channel.writeAndFlush(request);
+        channelFuture.addListener((FutureListener<Channel>) f1 -> {
+            if (f1.isSuccess()) {
+                Channel ch = f1.getNow();
+                ch.writeAndFlush(request);
+                // Release back to pool
+                connectManager.release(ch);
+            }
+        });
 
 //        Object result = null;
 //        try {
