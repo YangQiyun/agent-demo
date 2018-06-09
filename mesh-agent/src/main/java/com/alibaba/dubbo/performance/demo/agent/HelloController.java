@@ -5,7 +5,11 @@ import com.alibaba.dubbo.performance.demo.agent.registry.Endpoint;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
 import okhttp3.*;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.asynchttpclient.AsyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.asynchttpclient.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +37,12 @@ public class HelloController {
     private Random random = new Random();
     private List<Endpoint> endpoints = null;
     private Object lock = new Object();
-    private OkHttpClient httpClient = new OkHttpClient();
-    private AsyncHttpClient asyncHttpClient = org.asynchttpclient.Dsl.asyncHttpClient();
+    private AsyncHttpClient asyncHttpClient = asyncHttpClient(config()
+            .setMaxConnections(600)
+            .setMaxConnectionsPerHost(200)
+            .setPooledConnectionIdleTimeout(100)
+            .setConnectionTtl(600));
+
 
     @RequestMapping(value = "")
     public Object invoke(@RequestParam("interface") String interfaceName,
@@ -63,9 +71,11 @@ public class HelloController {
         if (null == endpoints){
             synchronized (lock){
                 if (null == endpoints){
-                    endpoints = new ArrayList<>();
-                    Endpoint endpoint1=registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"small").get(0);
-                    endpoints.add(endpoint1);
+                    synchronized (endpoints) {
+                        endpoints = new ArrayList<>();
+                        Endpoint endpoint1 = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService" + "small").get(0);
+                        endpoints.add(endpoint1);
+                    }
                     Endpoint endpoint2=registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService"+"middle").get(0);
                     endpoints.add(endpoint2);
                     endpoints.add(endpoint2);
@@ -82,22 +92,6 @@ public class HelloController {
         Endpoint endpoint = endpoints.get(random.nextInt(6));
         String url =  "http://" + endpoint.getHost() + ":" + endpoint.getPort();
 
-//        RequestBody requestBody = new FormBody.Builder()
-//                .add("interface",interfaceName)
-//                .add("method",method)
-//                .add("parameterTypesString",parameterTypesString)
-//                .add("parameter",parameter)
-//                .build();
-//        Request request = new Request.Builder()
-//                .url(url)
-//                .post(requestBody)
-//                .build();
-//        try (Response response = httpClient.newCall(request).execute()) {
-//            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-//            byte[] bytes = response.body().bytes();
-//            String s = new String(bytes);
-//            return Integer.valueOf(s);
-//        }
 
         // 使用异步http替换同步http
         DeferredResult<Integer> result = new DeferredResult<>();
